@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
 using week5.Entites;
 using week5.MnbServiceReference;
 
@@ -21,10 +22,11 @@ namespace week5
 
             dataGridView1.DataSource = Rates;
 
-            GetRates();
+            var r = GetRates();
+            GetXmlData(r);
         }
 
-        private void GetRates()
+        private string GetRates()
         {
             var mnbService = new MNBArfolyamServiceSoapClient();
 
@@ -38,6 +40,32 @@ namespace week5
             var response = mnbService.GetExchangeRates(request);
 
             var result = response.GetExchangeRatesResult;
+
+            return result;
+        }
+
+        private void GetXmlData(string result)
+        {
+            var xml = new XmlDocument();
+            xml.LoadXml(result);
+
+            foreach (XmlElement item in xml.DocumentElement)
+            {
+                var date = item.GetAttribute("date");
+
+                var rate = (XmlElement)item.ChildNodes[0];
+                var currency = rate.GetAttribute("curr");
+
+                var value = rate.InnerText;
+                
+                var r = new RateData()
+                {
+                    Date = DateTime.Parse(date),
+                    Currency = currency,
+                    Value = decimal.Parse(value)
+                };
+                Rates.Add(r);
+            }
         }
     }
 }
